@@ -1,0 +1,76 @@
+## R Markdown
+```{r}
+# Cargar el dataset
+fire <- read.csv("fire_archive_M-C61_692659.csv", stringsAsFactors = FALSE)
+
+# Convertir la columna de fecha a formato Date
+fire$acq_date <- as.Date(fire$acq_date, format = "%Y-%m-%d")
+
+# Definir límites geográficos
+lat_min <- 27.0
+lat_max <- 44.0
+lon_min <- -19.0
+lon_max <- 5.0
+
+# Definir rango temporal
+fecha_inicio <- as.Date("2001-01-01")
+fecha_fin    <- as.Date("2024-12-30")
+
+# Filtrar el dataset
+fire_filtrado <- subset(
+  fire,
+  latitude  >= lat_min & latitude  <= lat_max &
+  longitude >= lon_min & longitude <= lon_max &
+  acq_date  >= fecha_inicio & acq_date <= fecha_fin
+)
+
+# Ver dimensiones finales
+dim(fire_filtrado)
+
+# Guardar el dataset filtrado
+write.csv(fire_filtrado,
+          "fire_archive_spain_filtered.csv",
+          row.names = FALSE)
+```
+
+```{r}
+str(fire)
+```
+
+# Librerías necesarias
+library(readxl)
+library(dplyr)
+
+# Vector con los nombres de los archivos
+archivos <- c(
+  "Xlsx_20260112_190049_1.xlsx",
+  "Xlsx_20260112_190049_2.xlsx",
+  "Xlsx_20260112_190049_3.xlsx",
+  "Xlsx_20260112_190049_4.xlsx"
+)
+
+# Leer y unir todos los excels
+datos_unidos <- archivos %>%
+  lapply(read_excel) %>%   # Leer cada Excel
+  bind_rows()              # Unirlos en uno solo
+
+# Asegurar que la columna de superficie es numérica
+datos_unidos <- datos_unidos %>%
+  mutate(
+    SuperficieTotalForestal = as.numeric(SuperficieTotalForestal)
+  )
+
+# Filtrar superficies mayores de 500
+datos_filtrados <- datos_unidos %>%
+  filter(
+    SuperficieArbolada > 500)
+
+# Comprobar resultado
+dim(datos_filtrados)
+summary(datos_filtrados$SuperficieTotalForestal)
+
+# Guardar resultado final
+write.csv(datos_filtrados,
+          "incendios_superficie_mayor_500.csv",
+          row.names = FALSE)
+```
